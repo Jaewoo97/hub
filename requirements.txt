@@ -1,6 +1,6 @@
 tensorflow==2.3.0
 requests>=2.25.1
-sphynx==3.5.2
+Sphinx==3.5.2
 pydocstyle==5.1.1
 flake8==3.9.0
 pylint==2.7.2
