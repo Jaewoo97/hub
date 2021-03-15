@@ -1,0 +1,23 @@
+name: Datature Hub Commit Tests
+
+on: [ push, pull_request ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+          architecture: x64
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: Pylint, Flake8 and Pydocstyle
+        run: |
+          ./lint.sh
+
+
