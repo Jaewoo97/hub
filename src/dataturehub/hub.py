@@ -1,14 +1,17 @@
 """A loader for models trained on the Datature platform."""
 import enum
+import hashlib
 import os
 from pathlib import Path
 import shutil
 import sys
-from typing import Any, Optional
+from typing import Any, Optional, NamedTuple
 import zipfile
 
 import requests
 import tensorflow as tf
+
+_config = {"hub_endpoint": "https://api.datature.io/hub"}
 
 
 class ModelType(enum.Enum):
@@ -19,35 +22,85 @@ class ModelType(enum.Enum):
     """ProtoBuf model usable with TensorFlow"""
 
 
+_ModelURLWithHash = NamedTuple("ModelURLWithHash", [('url', str),
+                                                    ('checksum', str)])
+"""A URL to download a model file along with its SHA256 checksum."""
+
+
 def get_default_hub_dir():
     """Get the default directory where downloaded models are saved."""
     return os.path.join(Path.home(), ".dataturehub")
 
 
-def _get_signed_url_for_model(auth_key: str, deploy_key: str) -> str:
-    nexpresso_endpoint = "http://.../api/deploy"
+def _set_hub_endpoint(endpoint: str) -> None:
+    """Set the Datature Hub API endpoint to a different URL."""
+    _config["hub_endpoint"] = endpoint
 
-    response = requests.get(nexpresso_endpoint,
-                            params={
-                                "authKey": auth_key,
-                                "deployKey": deploy_key
-                            })
+
+def _get_model_url_and_hash(
+        model_key: str, project_secret: Optional[str]) -> _ModelURLWithHash:
+    """Get the URL and SHA256 hash of a model file."""
+    api_params = {"modelKey": model_key}
+
+    if project_secret is not None:
+        api_params["projectSecret"] = project_secret
+
+    response = requests.get(_config["hub_endpoint"], params=api_params)
 
     response.raise_for_status()
 
     response_json = response.json()
 
-    return response_json["signedURL"]["url"]
+    if response_json["status"] != "ready":
+        raise RuntimeError("Model is not ready to download.")
+
+    if not response_json["projectSecretNeeded"] and project_secret is not None:
+        sys.stderr.write(
+            "WARNING: Project secret unnecessarily supplied when downloading"
+            f"public model {model_key}.")
+        sys.stderr.flush()
+
+    return _ModelURLWithHash(response_json["signedUrl"], response_json["hash"])
 
 
-def _save_model_file(signed_url: str, destination_path: str,
-                     progress: bool) -> None:
-    """Download a model file and display progress information if requested."""
+def _get_sha256_hash_of_file(filepath: str, progress: bool) -> str:
+    """Compute the SHA256 checksum of a file."""
+    hash_f = hashlib.sha256()
+    chunk_size = 1024 * 1024
+
+    with open(filepath, 'rb') as file_to_hash:
+        total_mib = os.fstat(file_to_hash.fileno()).st_size / (1024 * 1024)
+        read_mib = 0
+
+        while True:
+            chunk = file_to_hash.read(chunk_size)
+
+            if not chunk:
+                break
+
+            read_mib += len(chunk) / (1024 * 1024)
+            if progress:
+                sys.stderr.write(
+                    f"\rVerifying {read_mib:.2f} / {total_mib:.2f} MiB...")
+                sys.stderr.flush()
+
+            hash_f.update(chunk)
+
+    if progress:
+        sys.stderr.write("\n")
+        sys.stderr.flush()
+
+    return hash_f.hexdigest()
+
+
+def _save_and_verify_model(url_with_hash: _ModelURLWithHash,
+                           destination_path: str, progress: bool) -> None:
+    """Download and verify the integrity of a model file."""
     if progress:
         sys.stderr.write("Downloading model from Datature Hub...\n")
 
     with open(destination_path, "wb") as model_file:
-        response = requests.get(signed_url, stream=True)
+        response = requests.get(url_with_hash.url, stream=True)
 
         response.raise_for_status()
 
@@ -81,16 +134,24 @@ def _save_model_file(signed_url: str, destination_path: str,
         sys.stderr.write("\n")
         sys.stderr.flush()
 
+    file_checksum = _get_sha256_hash_of_file(destination_path, progress)
 
-def download_model(auth_key: str,
-                   deploy_key: str,
+    if file_checksum != url_with_hash.checksum:
+        raise RuntimeError("Checksum of downloaded file "
+                           f"({file_checksum}) does not match the expected "
+                           f" value ({url_with_hash.checksum})")
+
+
+def download_model(model_key: str,
+                   project_secret: Optional[str] = None,
                    destination: Optional[str] = None,
                    model_type: ModelType = ModelType.TF,
                    progress: bool = True) -> str:
     """Download a model, placing it in the ``destination`` directory.
 
-    :param auth_key: Your Datature Hub authentication key
-    :param deploy_key: The deploy key of the model to download
+    :param model_key: The key of the model to download
+    :param project_secret: The project secret, or ``None`` if no secret key
+        is necessary.
     :param destination: The path to the directory where the model will be
         saved, or ``None`` to use the default hub directory.
     :param model_type: The type of the model that should be downloaded
@@ -101,17 +162,17 @@ def download_model(auth_key: str,
     if destination is None:
         destination = get_default_hub_dir()
 
-    model_folder = os.path.join(destination, deploy_key)
+    model_folder = os.path.join(destination, model_key)
 
     Path(model_folder).mkdir(parents=True, exist_ok=True)
 
     try:
-        model_signed_url = _get_signed_url_for_model(auth_key, deploy_key)
+        url_with_hash = _get_model_url_and_hash(model_key, project_secret)
 
         if model_type == ModelType.TF:
             model_zip_path = os.path.join(model_folder, "model.zip")
 
-            _save_model_file(model_signed_url, model_zip_path, progress)
+            _save_and_verify_model(url_with_hash, model_zip_path, progress)
 
             if progress:
                 sys.stderr.write("Extracting model...\n")
@@ -130,16 +191,17 @@ def download_model(auth_key: str,
     return model_folder
 
 
-def load_tf_model(auth_key: str,
-                  deploy_key: str,
+def load_tf_model(model_key: str,
+                  project_secret: Optional[str] = None,
                   hub_dir: Optional[str] = None,
                   force_download: bool = False,
                   progress: bool = True,
                   **kwargs) -> Any:
     """Load a TensorFlow model.
 
-    :param auth_key: Your Datature Hub authentication key
-    :param deploy_key: The deploy key for the model to download
+    :param model_key: The key of the model to load
+    :param project_secret: The project secret, or ``None`` if no secret key
+        is necessary.
     :param hub_dir: The path to the model cache folder, or
         ``None`` to use the default hub directory.
     :param force_download: Whether to download the model from Datature Hub
@@ -153,10 +215,11 @@ def load_tf_model(auth_key: str,
     if hub_dir is None:
         hub_dir = get_default_hub_dir()
 
-    model_folder = os.path.join(hub_dir, deploy_key)
+    model_folder = os.path.join(hub_dir, model_key)
 
     if force_download or not os.path.exists(model_folder):
-        download_model(auth_key, deploy_key, hub_dir, ModelType.TF, progress)
+        download_model(model_key, project_secret, hub_dir, ModelType.TF,
+                       progress)
 
     return tf.saved_model.load(
         os.path.join(model_folder, "exported_model", "saved_model"), **kwargs)
