@@ -1,0 +1,1 @@
+from fixtures.melanoma_model import melanoma_model

@@ -221,5 +221,5 @@ def load_tf_model(model_key: str,
         download_model(model_key, project_secret, hub_dir, ModelType.TF,
                        progress)
 
-    return tf.saved_model.load(
-        os.path.join(model_folder, "exported_model", "saved_model"), **kwargs)
+    return tf.saved_model.load(os.path.join(model_folder, "saved_model"),
+                               **kwargs)
