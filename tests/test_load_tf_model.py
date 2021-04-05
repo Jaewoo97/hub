@@ -18,4 +18,4 @@ def test_load_tf_model(tmpdir, melanoma_model):
     actual_predictions = predict.run_prediction(trained_model, images,
                                                 image_size, threshold)
 
-    assert predictions == actual_predictions
+    assert predict.predictions_equal(actual_predictions, predictions)

@@ -72,3 +72,28 @@ def run_prediction(trained_model, images: List[str],
         return {"bboxes": bboxes, "classes": classes, "scores": scores}
 
     return [predict_one_image(image) for image in images]
+
+
+def predictions_equal(actual, expected) -> bool:
+    """Determine if two prediction objects are equal.
+
+    :param actual: The actual prediction object
+    :param expected: The expected prediction object
+    :return: True if actual == expected, False otherwise
+    """
+
+    def one_prediction_equal(actual_one, expected_one):
+        bboxes_actual = np.array(actual_one["bboxes"])
+        classes_actual = np.array(actual_one["classes"])
+        scores_actual = np.array(actual_one["scores"])
+
+        bboxes_expected = np.array(expected_one["bboxes"])
+        classes_expected = np.array(expected_one["classes"])
+        scores_expected = np.array(expected_one["scores"])
+
+        return (np.allclose(bboxes_actual, bboxes_expected)
+                and np.allclose(classes_actual, classes_expected)
+                and np.allclose(scores_actual, scores_expected))
+
+    return all((one_prediction_equal(actual[i], expected_one)
+                for i, expected_one in enumerate(expected)))
