@@ -45,7 +45,7 @@ def _get_model_url_and_hash(
     if project_secret is not None:
         api_params["projectSecret"] = project_secret
 
-    response = requests.get(_config["hub_endpoint"], params=api_params)
+    response = requests.post(_config["hub_endpoint"], json=api_params)
 
     response.raise_for_status()
 
