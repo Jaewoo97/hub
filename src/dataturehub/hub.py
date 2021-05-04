@@ -11,7 +11,7 @@ import zipfile
 import requests
 import tensorflow as tf
 
-_config = {"hub_endpoint": "https://api.datature.io/hub"}
+_config = {"hub_endpoint": "https://asia-northeast1-datature-alchemy.cloudfunctions.net/invoke-hub-staging"}
 
 
 class ModelType(enum.Enum):
@@ -223,3 +223,57 @@ def load_tf_model(model_key: str,
 
     return tf.saved_model.load(os.path.join(model_folder, "saved_model"),
                                **kwargs)
+
+def load_label_map(
+    model_key: Optional[str] = None,
+    label_map_path: Optional[str] = None,
+) -> Any:
+    """ Loads the label map for the Tensorflow model.
+    Only one of 'model_key' or 'label_map_directory' should be used at all times
+    :param model_key: The key of the model 
+    :param label_map_path: The user-supplied directory to load the label map from
+    """
+    if model_key is None and label_map_path is None:
+        raise ValueError(
+            "Both input parameters model_key and label_map_path are not given."
+        )
+    if model_key is not None and label_map_path is not None:
+        raise ValueError(
+            "Both input parameters model_key and label_map_path are given. Please only give one."
+        )
+    def _load_label_map(label_map_path):
+        """
+        Reads label map in the format of .pbtxt and parse into dictionary
+        Args:
+        label_map_path: the file path to the label_map
+        Returns:
+        dictionary with the format of {label_index: {'id': label_index, 'name': label_name}}
+        """
+        label_map = {}
+
+        with open(label_map_path, "r") as label_file:
+            for line in label_file:
+                if "id" in line:
+                    label_index = int(line.split(":")[-1])
+                    label_name = next(label_file).split(":")[-1].strip().strip("'")
+                    label_map[label_index] = {"id": label_index, "name": label_name}
+
+        return label_map
+    
+    if label_map_path is not None:
+        return _load_label_map(label_map_path)
+    
+    if model_key is not None:
+        hub_dir = get_default_hub_dir()
+        model_folder = os.path.join(hub_dir, model_key)
+        if not os.path.exists(model_folder):
+            raise FileNotFoundError(
+                "The directory for model key " + model_key + " does not exist."
+            )
+        label_map_location = os.path.join(model_folder, "label_map.pbtxt")
+        if not os.path.exists(label_map_location):
+            raise FileNotFoundError(
+                "label map not found in the model key directory. Try re-downloading the model by calling load_tf_model with force_download parameter = True."
+            )
+        return _load_label_map(label_map_location)
+    
