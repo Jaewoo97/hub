@@ -339,3 +339,4 @@ def load_image(
     image = image.resize((model_height, model_width))
 
     return tf.convert_to_tensor(np.array(image))[tf.newaxis, ...]
+    
