@@ -17,7 +17,7 @@ import tensorflow as tf
 
 
 _config = {
-    "hub_endpoint":"https://asia-northeast1-datature-alchemy.\
+    "hub_endpoint": "https://asia-northeast1-datature-alchemy.\
     cloudfunctions.net/invoke-hub-staging"
 }
 
@@ -275,7 +275,10 @@ def load_label_map(
             if "id" in line:
                 label_index = int(line.split(":")[-1])
                 label_name = next(label_file).split(":")[-1].strip().strip("'")
-                label_map[label_index] = {"id": label_index,"name": label_name}
+                label_map[label_index] = {
+                    "id": label_index, 
+                    "name": label_name
+                }
 
     return label_map
 
@@ -295,7 +298,7 @@ def load_image(
     if height is not None and width is not None:
         height_width_check = True
     elif ((height is None and width is not None) or
-        (height is not None and width is None)):
+            (height is not None and width is None)):
         raise ValueError(
             "height and width parameters either need \
             to be both given or both not given."
@@ -337,9 +340,9 @@ def load_image(
             line_list = opened_file.readlines()
             for index, contents in enumerate(line_list):
                 if "fixed_shape_resizer" in contents:
-                    model_height = int(line_list[index+1].strip()\
+                    model_height = int(line_list[index+1].strip()
                         .replace("height: ", ""))
-                    model_width = int(line_list[index+2].strip()\
+                    model_width = int(line_list[index+2].strip()
                         .replace("width: ", ""))
                     break
     image = Image.open(path).convert("RGB")
