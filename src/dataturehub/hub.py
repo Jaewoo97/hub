@@ -341,9 +341,9 @@ def load_image(
             for index, contents in enumerate(line_list):
                 if "fixed_shape_resizer" in contents:
                     model_height = int(line_list[index+1].strip()
-                                        .replace("height: ", ""))
+                                    .replace("height: ", ""))
                     model_width = int(line_list[index+2].strip()
-                                        .replace("width: ", ""))
+                                    .replace("width: ", ""))
                     break
     image = Image.open(path).convert("RGB")
     image = image.resize((model_height, model_width))
