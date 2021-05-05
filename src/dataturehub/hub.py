@@ -276,7 +276,7 @@ def load_label_map(
                 label_index = int(line.split(":")[-1])
                 label_name = next(label_file).split(":")[-1].strip().strip("'")
                 label_map[label_index] = {
-                    "id": label_index, 
+                    "id": label_index,
                     "name": label_name
                 }
 
