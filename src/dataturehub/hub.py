@@ -237,7 +237,7 @@ def load_label_map(
     model_key: Optional[str] = None,
     label_map_path: Optional[str] = None,
 ) -> Any:
-    """ Load the label map for the Tensorflow model.
+    """Load the label map for the Tensorflow model.
 
     Only one of 'model_key' or 'label_map_directory' should be used
     :param model_key: The key of the model
@@ -290,7 +290,7 @@ def load_image(
     height: int = None,
     width: int = None,
 ) -> Any:
-    """ Load Image.
+    """Load Image.
 
     Take in the path of an image, along with either the model_key or
     (height and width) parameters and returns an image tensor.
