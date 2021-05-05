@@ -7,12 +7,18 @@ import shutil
 import sys
 from typing import Any, Optional, NamedTuple
 import zipfile
+import warnings
+
+from PIL import Image
+import numpy as np
 
 import requests
 import tensorflow as tf
 
-_config = {"hub_endpoint": "https://asia-northeast1-datature-alchemy.cloudfunctions.net/invoke-hub-staging"}
 
+_config = {
+    "hub_endpoint": "https://asia-northeast1-datature-alchemy.cloudfunctions.net/invoke-hub-staging"
+}
 
 class ModelType(enum.Enum):
 
@@ -230,7 +236,7 @@ def load_label_map(
 ) -> Any:
     """ Loads the label map for the Tensorflow model.
     Only one of 'model_key' or 'label_map_directory' should be used at all times
-    :param model_key: The key of the model 
+    :param model_key: The key of the model
     :param label_map_path: The user-supplied directory to load the label map from
     """
     if model_key is None and label_map_path is None:
@@ -239,30 +245,10 @@ def load_label_map(
         )
     if model_key is not None and label_map_path is not None:
         raise ValueError(
-            "Both input parameters model_key and label_map_path are given. Please only give one."
+            "Both input parameters model_key and \
+            label_map_path are given. Please only give one."
         )
-    def _load_label_map(label_map_path):
-        """
-        Reads label map in the format of .pbtxt and parse into dictionary
-        Args:
-        label_map_path: the file path to the label_map
-        Returns:
-        dictionary with the format of {label_index: {'id': label_index, 'name': label_name}}
-        """
-        label_map = {}
 
-        with open(label_map_path, "r") as label_file:
-            for line in label_file:
-                if "id" in line:
-                    label_index = int(line.split(":")[-1])
-                    label_name = next(label_file).split(":")[-1].strip().strip("'")
-                    label_map[label_index] = {"id": label_index, "name": label_name}
-
-        return label_map
-    
-    if label_map_path is not None:
-        return _load_label_map(label_map_path)
-    
     if model_key is not None:
         hub_dir = get_default_hub_dir()
         model_folder = os.path.join(hub_dir, model_key)
@@ -270,10 +256,86 @@ def load_label_map(
             raise FileNotFoundError(
                 "The directory for model key " + model_key + " does not exist."
             )
-        label_map_location = os.path.join(model_folder, "label_map.pbtxt")
-        if not os.path.exists(label_map_location):
+        label_map_path = os.path.join(model_folder, "label_map.pbtxt")
+
+    if not os.path.exists(label_map_path):
+        raise FileNotFoundError(
+            "label map not found in the model key directory. \
+            Try re-downloading the model by \
+                calling load_tf_model with force_download parameter = True."
+        )
+
+    label_map = {}
+
+    with open(label_map_path, "r") as label_file:
+        for line in label_file:
+            if "id" in line:
+                label_index = int(line.split(":")[-1])
+                label_name = next(label_file).split(":")[-1].strip().strip("'")
+                label_map[label_index] = {"id": label_index, "name": label_name}
+
+    return label_map
+
+
+def load_image(
+    path : str,
+    model_key: str = None,
+    height: int = None,
+    width: int = None,
+) -> Any:
+    """
+    Takes in the path of an image, along with either the model_key or
+    (height and width) parameters and returns an image tensor.
+    Only one of model_key or (height and width) parameters should be given.
+    """
+    height_width_check = False
+    if height is not None and width is not None:
+        height_width_check = True
+    elif (height is None and width is not None) or (height is not None and width is None):
+        raise ValueError(
+            "height and width parameters either need to be both given or both not given."
+        )
+
+    if not height_width_check and model_key is None:
+        raise ValueError(
+            "either model_key needs to be given or \
+            both height and width parameters need to be given."
+        )
+    if height_width_check and model_key is not None:
+        warnings.warn(
+            "WARNING: height and width parameters will be \
+            overwritten since model_key is already given."
+        )
+    model_height = 0
+    model_width = 0
+
+    if height_width_check:
+        model_height = height
+        model_width = width
+
+    if model_key is not None:
+        hub_dir = get_default_hub_dir()
+        model_folder = os.path.join(hub_dir, model_key)
+        if not os.path.exists(model_folder):
             raise FileNotFoundError(
-                "label map not found in the model key directory. Try re-downloading the model by calling load_tf_model with force_download parameter = True."
+                "The directory for model key " + model_key + " does not exist."
             )
-        return _load_label_map(label_map_location)
-    
+        pipeline_path = os.path.join(model_folder, "pipeline.config")
+
+        if not os.path.exists(pipeline_path):
+            raise FileNotFoundError(
+                "pipeline.config not found in the model key directory. \
+                Try re-downloading the model by \
+                calling load_tf_model with force_download parameter = True."
+            )
+        with open(pipeline_path, "r") as opened_file:
+            line_list = opened_file.readlines()
+            for index, contents in enumerate(line_list):
+                if "fixed_shape_resizer" in contents:
+                    model_height = int(line_list[index+1].strip().replace("height: ", ""))
+                    model_width = int(line_list[index+2].strip().replace("width: ", ""))
+                    break
+    image = Image.open(path).convert("RGB")
+    image = image.resize((model_height, model_width))
+
+    return tf.convert_to_tensor(np.array(image))[tf.newaxis, ...]
