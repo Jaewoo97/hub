@@ -17,8 +17,10 @@ import tensorflow as tf
 
 
 _config = {
-    "hub_endpoint": "https://asia-northeast1-datature-alchemy.cloudfunctions.net/invoke-hub-staging"
+    "hub_endpoint":"https://asia-northeast1-datature-alchemy.\
+    cloudfunctions.net/invoke-hub-staging"
 }
+
 
 class ModelType(enum.Enum):
 
@@ -230,14 +232,15 @@ def load_tf_model(model_key: str,
     return tf.saved_model.load(os.path.join(model_folder, "saved_model"),
                                **kwargs)
 
+
 def load_label_map(
     model_key: Optional[str] = None,
     label_map_path: Optional[str] = None,
 ) -> Any:
     """ Loads the label map for the Tensorflow model.
-    Only one of 'model_key' or 'label_map_directory' should be used at all times
+    Only one of 'model_key' or 'label_map_directory' should be used
     :param model_key: The key of the model
-    :param label_map_path: The user-supplied directory to load the label map from
+    :param label_map_path: The user-supplied directory to load the label map
     """
     if model_key is None and label_map_path is None:
         raise ValueError(
@@ -272,13 +275,13 @@ def load_label_map(
             if "id" in line:
                 label_index = int(line.split(":")[-1])
                 label_name = next(label_file).split(":")[-1].strip().strip("'")
-                label_map[label_index] = {"id": label_index, "name": label_name}
+                label_map[label_index] = {"id": label_index,"name": label_name}
 
     return label_map
 
 
 def load_image(
-    path : str,
+    path: str,
     model_key: str = None,
     height: int = None,
     width: int = None,
@@ -291,9 +294,11 @@ def load_image(
     height_width_check = False
     if height is not None and width is not None:
         height_width_check = True
-    elif (height is None and width is not None) or (height is not None and width is None):
+    elif ((height is None and width is not None) or
+        (height is not None and width is None)):
         raise ValueError(
-            "height and width parameters either need to be both given or both not given."
+            "height and width parameters either need \
+            to be both given or both not given."
         )
 
     if not height_width_check and model_key is None:
@@ -332,8 +337,10 @@ def load_image(
             line_list = opened_file.readlines()
             for index, contents in enumerate(line_list):
                 if "fixed_shape_resizer" in contents:
-                    model_height = int(line_list[index+1].strip().replace("height: ", ""))
-                    model_width = int(line_list[index+2].strip().replace("width: ", ""))
+                    model_height = int(line_list[index+1].strip()\
+                        .replace("height: ", ""))
+                    model_width = int(line_list[index+2].strip()\
+                        .replace("width: ", ""))
                     break
     image = Image.open(path).convert("RGB")
     image = image.resize((model_height, model_width))
