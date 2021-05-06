@@ -300,7 +300,6 @@ def load_image(
     :param height: The height required by the model
     :param width: The width required by the model
     """
-
     image = Image.open(path).convert("RGB")
     image = image.resize((height, width))
 
