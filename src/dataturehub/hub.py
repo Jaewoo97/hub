@@ -29,7 +29,9 @@ class ModelType(enum.Enum):
     """ProtoBuf model usable with TensorFlow"""
 
 
-_ModelURLWithHash = NamedTuple("ModelURLWithHash", [("url", str), ("checksum", str)])
+_ModelURLWithHash = NamedTuple(
+    "ModelURLWithHash", [("url", str), ("checksum", str)]
+)
 """A URL to download a model file along with its SHA256 checksum."""
 
 
@@ -88,7 +90,9 @@ def _get_sha256_hash_of_file(filepath: str, progress: bool) -> str:
 
             read_mib += len(chunk) / (1024 * 1024)
             if progress:
-                sys.stderr.write(f"\rVerifying {read_mib:.2f} / {total_mib:.2f} MiB...")
+                sys.stderr.write(
+                    f"\rVerifying {read_mib:.2f} / {total_mib:.2f} MiB..."
+                )
                 sys.stderr.flush()
 
             hash_f.update(chunk)
@@ -127,7 +131,9 @@ def _save_and_verify_model(
             if progress:
                 downloaded_so_far_mib += len(data) / (1024 * 1024)
                 progress_bar_progress = int(
-                    progress_bar_size * downloaded_so_far_mib / total_length_mib
+                    progress_bar_size
+                    * downloaded_so_far_mib
+                    / total_length_mib
                 )
 
                 sys.stderr.write(
@@ -233,9 +239,13 @@ def load_tf_model(
     model_folder = os.path.join(hub_dir, model_key)
 
     if force_download or not os.path.exists(model_folder):
-        download_model(model_key, project_secret, hub_dir, ModelType.TF, progress)
+        download_model(
+            model_key, project_secret, hub_dir, ModelType.TF, progress
+        )
 
-    return tf.saved_model.load(os.path.join(model_folder, "saved_model"), **kwargs)
+    return tf.saved_model.load(
+        os.path.join(model_folder, "saved_model"), **kwargs
+    )
 
 
 def load_label_map(
@@ -252,7 +262,10 @@ def load_label_map(
             if "id" in line:
                 label_index = int(line.split(":")[-1])
                 label_name = next(label_file).split(":")[-1].strip().strip("'")
-                label_map[label_index] = {"id": label_index, "name": label_name}
+                label_map[label_index] = {
+                    "id": label_index,
+                    "name": label_name,
+                }
 
     return label_map
 
@@ -321,7 +334,11 @@ def load_image_with_model_dimensions(
         line_list = opened_file.readlines()
         for index, contents in enumerate(line_list):
             if "fixed_shape_resizer" in contents:
-                model_height = int(line_list[index + 1].strip().replace("height: ", ""))
-                model_width = int(line_list[index + 2].strip().replace("width: ", ""))
+                model_height = int(
+                    line_list[index + 1].strip().replace("height: ", "")
+                )
+                model_width = int(
+                    line_list[index + 2].strip().replace("width: ", "")
+                )
                 break
     return load_image(path, model_height, model_width)
