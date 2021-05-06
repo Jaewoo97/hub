@@ -30,8 +30,7 @@ class ModelType(enum.Enum):
     """ProtoBuf model usable with TensorFlow"""
 
 
-_ModelURLWithHash = NamedTuple("ModelURLWithHash", [('url', str),
-                                                    ('checksum', str)])
+_ModelURLWithHash = NamedTuple("ModelURLWithHash", [("url", str), ("checksum", str)])
 """A URL to download a model file along with its SHA256 checksum."""
 
 
@@ -46,7 +45,8 @@ def _set_hub_endpoint(endpoint: str) -> None:
 
 
 def _get_model_url_and_hash(
-        model_key: str, project_secret: Optional[str]) -> _ModelURLWithHash:
+    model_key: str, project_secret: Optional[str]
+) -> _ModelURLWithHash:
     """Get the URL and SHA256 hash of a model file."""
     api_params = {"modelKey": model_key}
 
@@ -65,7 +65,8 @@ def _get_model_url_and_hash(
     if not response_json["projectSecretNeeded"] and project_secret is not None:
         sys.stderr.write(
             "WARNING: Project secret unnecessarily supplied when downloading"
-            f"public model {model_key}.")
+            f"public model {model_key}."
+        )
         sys.stderr.flush()
 
     return _ModelURLWithHash(response_json["signedUrl"], response_json["hash"])
@@ -76,7 +77,7 @@ def _get_sha256_hash_of_file(filepath: str, progress: bool) -> str:
     hash_f = hashlib.sha256()
     chunk_size = 1024 * 1024
 
-    with open(filepath, 'rb') as file_to_hash:
+    with open(filepath, "rb") as file_to_hash:
         total_mib = os.fstat(file_to_hash.fileno()).st_size / (1024 * 1024)
         read_mib = 0
 
@@ -88,8 +89,7 @@ def _get_sha256_hash_of_file(filepath: str, progress: bool) -> str:
 
             read_mib += len(chunk) / (1024 * 1024)
             if progress:
-                sys.stderr.write(
-                    f"\rVerifying {read_mib:.2f} / {total_mib:.2f} MiB...")
+                sys.stderr.write(f"\rVerifying {read_mib:.2f} / {total_mib:.2f} MiB...")
                 sys.stderr.flush()
 
             hash_f.update(chunk)
@@ -101,8 +101,9 @@ def _get_sha256_hash_of_file(filepath: str, progress: bool) -> str:
     return hash_f.hexdigest()
 
 
-def _save_and_verify_model(url_with_hash: _ModelURLWithHash,
-                           destination_path: str, progress: bool) -> None:
+def _save_and_verify_model(
+    url_with_hash: _ModelURLWithHash, destination_path: str, progress: bool
+) -> None:
     """Download and verify the integrity of a model file."""
     if progress:
         sys.stderr.write("Downloading model from Datature Hub...\n")
@@ -112,7 +113,7 @@ def _save_and_verify_model(url_with_hash: _ModelURLWithHash,
 
         response.raise_for_status()
 
-        total_length = response.headers.get('content-length')
+        total_length = response.headers.get("content-length")
 
         if total_length is None:
             model_file.write(response.content)
@@ -126,15 +127,16 @@ def _save_and_verify_model(url_with_hash: _ModelURLWithHash,
         for data in response.iter_content(chunk_size=4096):
             if progress:
                 downloaded_so_far_mib += len(data) / (1024 * 1024)
-                progress_bar_progress = int(progress_bar_size *
-                                            downloaded_so_far_mib /
-                                            total_length_mib)
+                progress_bar_progress = int(
+                    progress_bar_size * downloaded_so_far_mib / total_length_mib
+                )
 
                 sys.stderr.write(
                     f"\r[{'=' * (progress_bar_progress)}"
                     f"{' ' * (progress_bar_size - progress_bar_progress)}"
                     f"] {downloaded_so_far_mib:.2f} / "
-                    f"{total_length_mib:.2f} MiB")
+                    f"{total_length_mib:.2f} MiB"
+                )
                 sys.stderr.flush()
 
             model_file.write(data)
@@ -145,16 +147,20 @@ def _save_and_verify_model(url_with_hash: _ModelURLWithHash,
     file_checksum = _get_sha256_hash_of_file(destination_path, progress)
 
     if file_checksum != url_with_hash.checksum:
-        raise RuntimeError("Checksum of downloaded file "
-                           f"({file_checksum}) does not match the expected "
-                           f" value ({url_with_hash.checksum})")
+        raise RuntimeError(
+            "Checksum of downloaded file "
+            f"({file_checksum}) does not match the expected "
+            f" value ({url_with_hash.checksum})"
+        )
 
 
-def download_model(model_key: str,
-                   project_secret: Optional[str] = None,
-                   destination: Optional[str] = None,
-                   model_type: ModelType = ModelType.TF,
-                   progress: bool = True) -> str:
+def download_model(
+    model_key: str,
+    project_secret: Optional[str] = None,
+    destination: Optional[str] = None,
+    model_type: ModelType = ModelType.TF,
+    progress: bool = True,
+) -> str:
     """Download a model, placing it in the ``destination`` directory.
 
     :param model_key: The key of the model to download
@@ -199,12 +205,14 @@ def download_model(model_key: str,
     return model_folder
 
 
-def load_tf_model(model_key: str,
-                  project_secret: Optional[str] = None,
-                  hub_dir: Optional[str] = None,
-                  force_download: bool = False,
-                  progress: bool = True,
-                  **kwargs) -> Any:
+def load_tf_model(
+    model_key: str,
+    project_secret: Optional[str] = None,
+    hub_dir: Optional[str] = None,
+    force_download: bool = False,
+    progress: bool = True,
+    **kwargs,
+) -> Any:
     """Load a TensorFlow model.
 
     :param model_key: The key of the model to load
@@ -226,49 +234,18 @@ def load_tf_model(model_key: str,
     model_folder = os.path.join(hub_dir, model_key)
 
     if force_download or not os.path.exists(model_folder):
-        download_model(model_key, project_secret, hub_dir, ModelType.TF,
-                       progress)
+        download_model(model_key, project_secret, hub_dir, ModelType.TF, progress)
 
-    return tf.saved_model.load(os.path.join(model_folder, "saved_model"),
-                               **kwargs)
+    return tf.saved_model.load(os.path.join(model_folder, "saved_model"), **kwargs)
 
 
 def load_label_map(
-    model_key: Optional[str] = None,
-    label_map_path: Optional[str] = None,
+    label_map_path: str,
 ) -> Any:
     """Load the label map for the Tensorflow model.
 
-    Only one of 'model_key' or 'label_map_directory' should be used
-    :param model_key: The key of the model
-    :param label_map_path: The user-supplied directory to load the label map
+    :param label_map_path: The supplied directory to load the label map
     """
-    if model_key is None and label_map_path is None:
-        raise ValueError(
-            "Both input parameters model_key and label_map_path are not given."
-        )
-    if model_key is not None and label_map_path is not None:
-        raise ValueError(
-            "Both input parameters model_key and \
-            label_map_path are given. Please only give one."
-        )
-
-    if model_key is not None:
-        hub_dir = get_default_hub_dir()
-        model_folder = os.path.join(hub_dir, model_key)
-        if not os.path.exists(model_folder):
-            raise FileNotFoundError(
-                "The directory for model key " + model_key + " does not exist."
-            )
-        label_map_path = os.path.join(model_folder, "label_map.pbtxt")
-
-    if not os.path.exists(label_map_path):
-        raise FileNotFoundError(
-            "label map not found in the model key directory. \
-            Try re-downloading the model by \
-                calling load_tf_model with force_download parameter = True."
-        )
-
     label_map = {}
 
     with open(label_map_path, "r") as label_file:
@@ -276,78 +253,76 @@ def load_label_map(
             if "id" in line:
                 label_index = int(line.split(":")[-1])
                 label_name = next(label_file).split(":")[-1].strip().strip("'")
-                label_map[label_index] = {
-                    "id": label_index,
-                    "name": label_name
-                }
+                label_map[label_index] = {"id": label_index, "name": label_name}
 
     return label_map
 
 
+def load_label_map_from_model(
+    model_key: str,
+) -> Any:
+    """Load the label map for the Tensorflow model using the model key.
+
+    :param model_key: The key of the model
+    """
+    hub_dir = get_default_hub_dir()
+    model_folder = os.path.join(hub_dir, model_key)
+    if not os.path.exists(model_folder):
+        raise FileNotFoundError(
+            "The directory for model key " + model_key + " does not exist."
+        )
+    label_map_path = os.path.join(model_folder, "label_map.pbtxt")
+    return load_label_map(label_map_path=label_map_path)
+
+
 def load_image(
     path: str,
-    model_key: str = None,
-    height: int = None,
-    width: int = None,
+    height: int,
+    width: int,
 ) -> Any:
     """Load Image.
 
-    Take in the path of an image, along with either the model_key or
+    Take in the path of an image, along with either the
     (height and width) parameters and returns an image tensor.
-    Only one of model_key or (height and width) parameters should be given.
+    :param path: The path of the image
+    :param height: The height required by the model
+    :param width: The width required by the model
     """
-    height_width_check = False
-    if height is not None and width is not None:
-        height_width_check = True
-    elif ((height is None and width is not None) or
-            (height is not None and width is None)):
-        raise ValueError(
-            "height and width parameters either need \
-            to be both given or both not given."
-        )
 
-    if not height_width_check and model_key is None:
-        raise ValueError(
-            "either model_key needs to be given or \
-            both height and width parameters need to be given."
-        )
-    if height_width_check and model_key is not None:
-        warnings.warn(
-            "WARNING: height and width parameters will be \
-            overwritten since model_key is already given."
-        )
-    model_height = 0
-    model_width = 0
-
-    if height_width_check:
-        model_height = height
-        model_width = width
-
-    if model_key is not None:
-        hub_dir = get_default_hub_dir()
-        model_folder = os.path.join(hub_dir, model_key)
-        if not os.path.exists(model_folder):
-            raise FileNotFoundError(
-                "The directory for model key " + model_key + " does not exist."
-            )
-        pipeline_path = os.path.join(model_folder, "pipeline.config")
-
-        if not os.path.exists(pipeline_path):
-            raise FileNotFoundError(
-                "pipeline.config not found in the model key directory. \
-                Try re-downloading the model by \
-                calling load_tf_model with force_download parameter = True."
-            )
-        with open(pipeline_path, "r") as opened_file:
-            line_list = opened_file.readlines()
-            for index, contents in enumerate(line_list):
-                if "fixed_shape_resizer" in contents:
-                    model_height = int(line_list[index+1].strip()
-                                       .replace("height: ", ""))
-                    model_width = int(line_list[index+2].strip()
-                                      .replace("width: ", ""))
-                    break
     image = Image.open(path).convert("RGB")
-    image = image.resize((model_height, model_width))
+    image = image.resize((height, width))
 
     return tf.convert_to_tensor(np.array(image))[tf.newaxis, ...]
+
+
+def load_image_with_model_dimensions(
+    path: str,
+    model_key: str,
+) -> Any:
+    """Load Image with image settings retrieved from model.
+
+    :param path: The path of the image
+    :param model_key: The key of the model
+    """
+    hub_dir = get_default_hub_dir()
+    model_folder = os.path.join(hub_dir, model_key)
+    if not os.path.exists(model_folder):
+        raise FileNotFoundError(
+            "The directory for model key " + model_key + " does not exist."
+        )
+    pipeline_path = os.path.join(model_folder, "pipeline.config")
+
+    if not os.path.exists(pipeline_path):
+        raise FileNotFoundError(
+            "pipeline.config not found in the model key directory. \
+            Try re-downloading the model by \
+            calling load_tf_model with force_download parameter = True."
+        )
+    with open(pipeline_path, "r") as opened_file:
+        line_list = opened_file.readlines()
+        for index, contents in enumerate(line_list):
+            if "fixed_shape_resizer" in contents:
+                model_height = int(line_list[index + 1].strip().replace("height: ", ""))
+                model_width = int(line_list[index + 2].strip().replace("width: ", ""))
+                break
+    return load_image(path, model_height, model_width)
