@@ -7,7 +7,6 @@ import shutil
 import sys
 from typing import Any, Optional, NamedTuple
 import zipfile
-import warnings
 
 from PIL import Image
 import numpy as np
