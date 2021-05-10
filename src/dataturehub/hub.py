@@ -34,7 +34,7 @@ _ModelURLWithHash = NamedTuple(
 """A URL to download a model file along with its SHA256 checksum."""
 
 
-class hub:
+class HubModel:
     def _set_hub_endpoint(self, endpoint: str) -> None:
         """Set the Datature Hub API endpoint to a different URL."""
         _config["hub_endpoint"] = endpoint
@@ -114,6 +114,7 @@ class hub:
             if model_key is not None
             else None
         )
+        self.height_width_cache = None
 
     def get_default_hub_dir(self):
         return self.hub_dir
@@ -284,7 +285,9 @@ class hub:
         model_folder = os.path.join(self.hub_dir, self.model_key)
         if not os.path.exists(model_folder):
             raise FileNotFoundError(
-                "The directory for model key " + model_key + " does not exist."
+                "The directory for model key "
+                + self.model_key
+                + " does not exist."
             )
         label_map_path = os.path.join(model_folder, "label_map.pbtxt")
         return self.load_label_map_from_file(label_map_path=label_map_path)
@@ -316,6 +319,11 @@ class hub:
 
         :param path: The path of the image
         """
+        if self.height_width_cache is not None:
+            return self.load_image(
+                path, self.height_width_cache[0], self.height_width_cache[1]
+            )
+
         model_folder = os.path.join(self.hub_dir, self.model_key)
         if not os.path.exists(model_folder):
             raise FileNotFoundError(
@@ -342,4 +350,5 @@ class hub:
                         line_list[index + 2].strip().replace("width: ", "")
                     )
                     break
+        self.height_width_cache = (model_height, model_width)
         return self.load_image(path, model_height, model_width)

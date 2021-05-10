@@ -5,7 +5,7 @@ from PIL import Image
 from .utils.color_switch import color_switch
 
 
-class visualize:
+class Visualize:
     def __init__(
         self,
         image_directory,
@@ -13,6 +13,13 @@ class visualize:
         category_index,
         threshold,
     ):
+        """Sets up the visualize object
+
+        :param image_directory: The path of the image to perform visualizations on
+        :param detections_output: The detections that are being returned by the model
+        :param category_index: The category index list
+        :param threshold: The threshold confidence level required to be visualized
+        """
         self.image_directory = image_directory
         self.detections_output = detections_output
         self.category_index = category_index
