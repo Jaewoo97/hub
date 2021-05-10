@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from PIL import Image
 
-import color_switch
+from .color_switch import color_switch
 
 
 def visualize_bbox(
