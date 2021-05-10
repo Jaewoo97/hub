@@ -20,6 +20,83 @@ _config = {
 }
 
 
+def _set_hub_endpoint(self, endpoint: str) -> None:
+    """Set the Datature Hub API endpoint to a different URL."""
+    _config["hub_endpoint"] = endpoint
+
+
+def _get_sha256_hash_of_file(filepath: str, progress: bool) -> str:
+    """Compute the SHA256 checksum of a file."""
+    hash_f = hashlib.sha256()
+    chunk_size = 1024 * 1024
+
+    with open(filepath, "rb") as file_to_hash:
+        total_mib = os.fstat(file_to_hash.fileno()).st_size / (1024 * 1024)
+        read_mib = 0
+
+        while True:
+            chunk = file_to_hash.read(chunk_size)
+
+            if not chunk:
+                break
+
+            read_mib += len(chunk) / (1024 * 1024)
+            if progress:
+                sys.stderr.write(
+                    f"\rVerifying {read_mib:.2f} / {total_mib:.2f} MiB..."
+                )
+                sys.stderr.flush()
+
+            hash_f.update(chunk)
+
+    if progress:
+        sys.stderr.write("\n")
+        sys.stderr.flush()
+
+    return hash_f.hexdigest()
+
+
+def load_label_map_from_file(
+    label_map_path: str,
+) -> Any:
+    """Load the label map for the Tensorflow model.
+
+    :param label_map_path: The supplied directory to load the label map
+    """
+    label_map = {}
+
+    with open(label_map_path, "r") as label_file:
+        for line in label_file:
+            if "id" in line:
+                label_index = int(line.split(":")[-1])
+                label_name = next(label_file).split(":")[-1].strip().strip("'")
+                label_map[label_index] = {
+                    "id": label_index,
+                    "name": label_name,
+                }
+
+    return label_map
+
+
+def load_image(
+    path: str,
+    height: int,
+    width: int,
+) -> Any:
+    """Load Image.
+
+    Take in the path of an image, along with
+    (height and width) parameters and returns an image tensor.
+    :param path: The path of the image
+    :param height: The height required by the model
+    :param width: The width required by the model
+    """
+    image = Image.open(path).convert("RGB")
+    image = image.resize((height, width))
+
+    return tf.convert_to_tensor(np.array(image))[tf.newaxis, ...]
+
+
 class ModelType(enum.Enum):
 
     """A type of machine learning model."""
@@ -35,10 +112,6 @@ _ModelURLWithHash = NamedTuple(
 
 
 class HubModel:
-    def _set_hub_endpoint(self, endpoint: str) -> None:
-        """Set the Datature Hub API endpoint to a different URL."""
-        _config["hub_endpoint"] = endpoint
-
     def _get_model_url_and_hash(
         self, model_key: str, project_secret: Optional[str]
     ) -> _ModelURLWithHash:
@@ -71,52 +144,28 @@ class HubModel:
             response_json["signedUrl"], response_json["hash"]
         )
 
-    def _get_sha256_hash_of_file(self, filepath: str, progress: bool) -> str:
-        """Compute the SHA256 checksum of a file."""
-        hash_f = hashlib.sha256()
-        chunk_size = 1024 * 1024
-
-        with open(filepath, "rb") as file_to_hash:
-            total_mib = os.fstat(file_to_hash.fileno()).st_size / (1024 * 1024)
-            read_mib = 0
-
-            while True:
-                chunk = file_to_hash.read(chunk_size)
-
-                if not chunk:
-                    break
-
-                read_mib += len(chunk) / (1024 * 1024)
-                if progress:
-                    sys.stderr.write(
-                        f"\rVerifying {read_mib:.2f} / {total_mib:.2f} MiB..."
-                    )
-                    sys.stderr.flush()
-
-                hash_f.update(chunk)
-
-        if progress:
-            sys.stderr.write("\n")
-            sys.stderr.flush()
-
-        return hash_f.hexdigest()
-
     def __init__(
         self,
         model_key: Optional[str] = None,
         project_secret: Optional[str] = None,
     ):
+        """Initialize the ModelHub object
+
+        :param model_key: The model key obtained from datature
+        :param project_secret: The project secret obtained from datature
+        """
         self.hub_dir = os.path.join(Path.home(), ".dataturehub")
         self.model_key = model_key
         self.project_secret = project_secret
         self.model_url_and_hash = (
-            (self._get_model_url_and_hash(self.model_key, self.project_secret))
+            (_get_model_url_and_hash(self.model_key, self.project_secret))
             if model_key is not None
             else None
         )
         self.height_width_cache = None
 
     def get_default_hub_dir(self):
+        """Gets the default hub directory"""
         return self.hub_dir
 
     def _save_and_verify_model(
@@ -256,30 +305,6 @@ class HubModel:
             os.path.join(model_folder, "saved_model"), **kwargs
         )
 
-    def load_label_map_from_file(
-        self,
-        label_map_path: str,
-    ) -> Any:
-        """Load the label map for the Tensorflow model.
-
-        :param label_map_path: The supplied directory to load the label map
-        """
-        label_map = {}
-
-        with open(label_map_path, "r") as label_file:
-            for line in label_file:
-                if "id" in line:
-                    label_index = int(line.split(":")[-1])
-                    label_name = (
-                        next(label_file).split(":")[-1].strip().strip("'")
-                    )
-                    label_map[label_index] = {
-                        "id": label_index,
-                        "name": label_name,
-                    }
-
-        return label_map
-
     def load_label_map(self) -> Any:
         """Load the label map for the Tensorflow model using the model key."""
         model_folder = os.path.join(self.hub_dir, self.model_key)
@@ -290,26 +315,7 @@ class HubModel:
                 + " does not exist."
             )
         label_map_path = os.path.join(model_folder, "label_map.pbtxt")
-        return self.load_label_map_from_file(label_map_path=label_map_path)
-
-    def load_image(
-        self,
-        path: str,
-        height: int,
-        width: int,
-    ) -> Any:
-        """Load Image.
-
-        Take in the path of an image, along with
-        (height and width) parameters and returns an image tensor.
-        :param path: The path of the image
-        :param height: The height required by the model
-        :param width: The width required by the model
-        """
-        image = Image.open(path).convert("RGB")
-        image = image.resize((height, width))
-
-        return tf.convert_to_tensor(np.array(image))[tf.newaxis, ...]
+        return load_label_map_from_file(label_map_path=label_map_path)
 
     def load_image_with_model_dimensions(
         self,
@@ -351,4 +357,4 @@ class HubModel:
                     )
                     break
         self.height_width_cache = (model_height, model_width)
-        return self.load_image(path, model_height, model_width)
+        return load_image(path, model_height, model_width)

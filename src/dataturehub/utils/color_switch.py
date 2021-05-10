@@ -1,4 +1,9 @@
 def color_switch(number):
+    """Chooses a color depending on the given number.
+
+    :param number: The number as an integer
+    :return: The 3-tuple representing RGB channel
+    """
     switcher = [
         [61, 90, 254],
         [155, 191, 48],
