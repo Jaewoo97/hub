@@ -20,7 +20,7 @@ _config = {
 }
 
 
-def _set_hub_endpoint(self, endpoint: str) -> None:
+def _set_hub_endpoint(endpoint: str) -> None:
     """Set the Datature Hub API endpoint to a different URL."""
     _config["hub_endpoint"] = endpoint
 
@@ -112,6 +112,8 @@ _ModelURLWithHash = NamedTuple(
 
 
 class HubModel:
+    """HubModel class"""
+
     def _get_model_url_and_hash(
         self, model_key: str, project_secret: Optional[str]
     ) -> _ModelURLWithHash:
@@ -213,9 +215,7 @@ class HubModel:
             sys.stderr.write("\n")
             sys.stderr.flush()
 
-        file_checksum = self._get_sha256_hash_of_file(
-            destination_path, progress
-        )
+        file_checksum = _get_sha256_hash_of_file(destination_path, progress)
 
         if file_checksum != self.model_url_and_hash.checksum:
             raise RuntimeError(
@@ -326,7 +326,7 @@ class HubModel:
         :param path: The path of the image
         """
         if self.height_width_cache is not None:
-            return self.load_image(
+            return load_image(
                 path, self.height_width_cache[0], self.height_width_cache[1]
             )
 

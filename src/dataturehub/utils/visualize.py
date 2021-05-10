@@ -20,15 +20,15 @@ def visualize_bbox(
     :param category_index: The category index list
     :param threshold: The threshold confidence level required to be visualized
     """
-    num_detections = int(self.detections_output.pop("num_detections"))
+    num_detections = int(detections_output.pop("num_detections"))
     detections = {
         key: value[0, :num_detections].numpy()
-        for key, value in self.detections_output.items()
+        for key, value in detections_output.items()
     }
     detections["num_detections"] = num_detections
 
     ## Filter out predictions below threshold
-    indexes = np.where(detections["detection_scores"] > float(self.threshold))
+    indexes = np.where(detections["detection_scores"] > float(threshold))
 
     ## Extract predictions
     bboxes = detections["detection_boxes"][indexes]
@@ -36,7 +36,7 @@ def visualize_bbox(
     scores = detections["detection_scores"][indexes]
 
     ## Draw Predictions
-    image_origi = np.array(Image.open(self.image_directory).convert("RGB"))
+    image_origi = np.array(Image.open(image_directory).convert("RGB"))
     origi_shape = image_origi.shape
 
     if len(bboxes) != 0:
@@ -77,7 +77,7 @@ def visualize_bbox(
             cv2.putText(
                 image_origi,
                 "Class: {}, Score: {}".format(
-                    str(self.category_index[classes[idx]]["name"]),
+                    str(category_index[classes[idx]]["name"]),
                     str(round(scores[idx], 2)),
                 ),
                 (
