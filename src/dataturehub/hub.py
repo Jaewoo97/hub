@@ -160,7 +160,7 @@ class HubModel:
         self.model_key = model_key
         self.project_secret = project_secret
         self.model_url_and_hash = (
-            (_get_model_url_and_hash(self.model_key, self.project_secret))
+            (self._get_model_url_and_hash(self.model_key, self.project_secret))
             if model_key is not None
             else None
         )

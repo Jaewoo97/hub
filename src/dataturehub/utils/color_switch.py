@@ -1,3 +1,6 @@
+"""This module contains the utility function color_switch"""
+
+
 def color_switch(number):
     """Chooses a color depending on the given number.
 

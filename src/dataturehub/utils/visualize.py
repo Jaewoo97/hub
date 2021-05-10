@@ -1,3 +1,4 @@
+"""Module containing all visualize functions."""
 import numpy as np
 import cv2
 from PIL import Image

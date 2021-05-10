@@ -12,13 +12,18 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/datature/hub",
-    packages=setuptools.find_packages('src'),
-    package_dir={'': 'src'},
-    python_requires='>=3.7, <3.9',
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
+    python_requires=">=3.7, <3.9",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Intended Audience :: Science/Research"
+        "Intended Audience :: Science/Research",
     ],
-    install_requires=['tensorflow==2.3.0', 'requests>=2.25.1'])
+    install_requires=[
+        "tensorflow==2.3.0",
+        "requests>=2.25.1",
+        "opencv-python==4.5.1.48",
+    ],
+)
