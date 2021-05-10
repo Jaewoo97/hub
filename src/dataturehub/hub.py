@@ -168,27 +168,30 @@ class HubModel:
 
     def __init__(
         self,
-        model_key: Optional[str] = None,
+        model_key: str,
         project_secret: Optional[str] = None,
+        hub_dir: Optional[str] = None,
     ):
         """Initialize the ModelHub object
 
         :param model_key: The model key obtained from datature
         :param project_secret: The project secret obtained from datature
         """
-        self.hub_dir = os.path.join(Path.home(), ".dataturehub")
         self.model_key = model_key
-        self.project_secret = project_secret
-        self.model_url_and_hash = (
-            (self._get_model_url_and_hash(self.model_key, self.project_secret))
-            if model_key is not None
-            else None
-        )
         self.height_width_cache = None
+        self.project_secret = project_secret
+        self.model_url_and_hash = self._get_model_url_and_hash(
+            model_key, project_secret
+        )
+        self.model_dir = (
+            os.path.join(Path.home(), ".dataturehub", model_key)
+            if hub_dir is None
+            else os.path.join(hub_dir, model_key)
+        )
 
-    def get_default_hub_dir(self):
+    def get_default_model_dir(self):
         """Gets the default hub directory"""
-        return self.hub_dir
+        return self.model_dir
 
     def _save_and_verify_model(
         self, destination_path: str, progress: bool
@@ -246,7 +249,6 @@ class HubModel:
 
     def download_model(
         self,
-        destination: Optional[str] = None,
         model_type: ModelType = ModelType.TF,
         progress: bool = True,
     ) -> str:
@@ -259,19 +261,14 @@ class HubModel:
             downloads.
         :return: The directory where the model has been downloaded.
         """
-        if destination is None:
-            destination = self.hub_dir
-
-        model_folder = os.path.join(destination, self.model_key)
+        model_folder = self.model_dir
 
         Path(model_folder).mkdir(parents=True, exist_ok=True)
 
         try:
 
             if model_type == ModelType.TF:
-                model_zip_path = os.path.join(
-                    model_folder, self.project_secret
-                )
+                model_zip_path = os.path.join(model_folder, "model.zip")
 
                 self._save_and_verify_model(model_zip_path, progress)
                 if progress:
@@ -309,14 +306,9 @@ class HubModel:
             model loader.
         :return: The loaded TensorFlow model
         """
-        if model_cache_dir is None:
-            model_cache_dir = self.hub_dir
-            model_folder = os.path.join(model_cache_dir, self.model_key)
-        else:
-            model_folder = model_cache_dir
+        model_folder = self.model_dir
         if force_download or not os.path.exists(model_folder):
             self.download_model(
-                model_cache_dir,
                 ModelType.TF,
                 progress,
             )
@@ -327,7 +319,7 @@ class HubModel:
 
     def load_label_map(self) -> Any:
         """Load the label map for the Tensorflow model using the model key."""
-        model_folder = os.path.join(self.hub_dir, self.model_key)
+        model_folder = self.model_dir
         if not os.path.exists(model_folder):
             raise FileNotFoundError(
                 "The directory for model key "
@@ -350,7 +342,7 @@ class HubModel:
                 path, self.height_width_cache[0], self.height_width_cache[1]
             )
 
-        model_folder = os.path.join(self.hub_dir, self.model_key)
+        model_folder = self.model_dir
         if not os.path.exists(model_folder):
             raise FileNotFoundError(
                 "The directory for model key "

@@ -18,12 +18,11 @@ def test_load_tf_model(tmpdir, melanoma_model):
         threshold,
         predictions,
     ) = melanoma_model
-
     hub_model = hub.HubModel(
-        model_key=model_key, project_secret=project_secret
+        model_key=model_key, project_secret=project_secret, hub_dir=str(tmpdir)
     )
 
-    trained_model = hub_model.load_tf_model(model_cache_dir=str(tmpdir))
+    trained_model = hub_model.load_tf_model()
 
     actual_predictions = predict.run_prediction(
         trained_model, images, image_size, threshold
