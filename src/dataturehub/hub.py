@@ -98,11 +98,31 @@ def load_image(
 
 
 class ModelType(enum.Enum):
-
     """A type of machine learning model."""
 
     TF = "TF"
     """ProtoBuf model usable with TensorFlow"""
+
+
+class NNType(enum.Enum):
+    """A type of neural network used for the machine learning model."""
+
+    SSD = 1
+    """Neural network umbrella supporting MobileNet, EfficientDet."""
+    FRCNN = 2
+    """Neural network umbrella supporting FasterRCNN."""
+    CNET = 3
+    """Neural network umbrella supporting CenterNet"""
+
+
+def get_nn_params(nn_type):
+    if nn_type is NNType.SSD:
+        return ("fixed_shape_resizer", "height", "width")
+    if nn_type is NNType.FRCNN:
+        return ("keep_aspect_ratio_resizer", "min_dimension", "max_dimension")
+    if nn_type is NNType.CNET:
+        return ("TO BE ADDED", "TO BE ADDED", "TO BE ADDED")
+    raise ValueError("Invalid nn_type parameter.")
 
 
 _ModelURLWithHash = NamedTuple(
@@ -347,13 +367,22 @@ class HubModel:
             )
         with open(pipeline_path, "r") as opened_file:
             line_list = opened_file.readlines()
+            if "ssd" in line_list[1]:
+                nn_type = NNType.SSD
+            elif "faster_rcnn" in line_list[1]:
+                nn_type = NNType.FRCNN
+            nn_params = get_nn_params(nn_type)
             for index, contents in enumerate(line_list):
-                if "fixed_shape_resizer" in contents:
+                if nn_params[0] in contents:
                     model_height = int(
-                        line_list[index + 1].strip().replace("height: ", "")
+                        line_list[index + 1]
+                        .strip()
+                        .replace((nn_params[1] + ": "), "")
                     )
                     model_width = int(
-                        line_list[index + 2].strip().replace("width: ", "")
+                        line_list[index + 2]
+                        .strip()
+                        .replace((nn_params[2] + ": "), "")
                     )
                     break
         self.height_width_cache = (model_height, model_width)
