@@ -97,9 +97,9 @@ def predictions_equal(actual, expected) -> bool:
         scores_expected = np.array(expected_one["scores"])
 
         return (
-            np.allclose(bboxes_actual, bboxes_expected, 1e-03)
-            and np.allclose(classes_actual, classes_expected, 1e-03)
-            and np.allclose(scores_actual, scores_expected, 1e-03)
+            np.allclose(bboxes_actual, bboxes_expected, 1e-02)
+            and np.allclose(classes_actual, classes_expected, 1e-02)
+            and np.allclose(scores_actual, scores_expected, 1e-02)
         )
 
     return all(
