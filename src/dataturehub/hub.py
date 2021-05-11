@@ -14,6 +14,7 @@ import numpy as np
 import requests
 import tensorflow as tf
 
+from .utils import get_height_width
 
 _config = {
     "hub_endpoint": "https://asia-northeast1-datature-alchemy.cloudfunctions.net/invoke-hub-staging"
@@ -62,6 +63,7 @@ def load_label_map_from_file(
     """Load the label map for the Tensorflow model.
 
     :param label_map_path: The supplied directory to load the label map
+    :return: dictionary of label_maps
     """
     label_map = {}
 
@@ -90,6 +92,7 @@ def load_image(
     :param path: The path of the image
     :param height: The height required by the model
     :param width: The width required by the model
+    :return: TF tensor
     """
     image = Image.open(path).convert("RGB")
     image = image.resize((height, width))
@@ -289,15 +292,12 @@ class HubModel:
 
     def load_tf_model(
         self,
-        model_cache_dir: Optional[str] = None,
         force_download: bool = False,
         progress: bool = True,
         **kwargs,
     ) -> Any:
         """Load a TensorFlow model.
 
-        :param model_dir: The path to the model cache folder, or
-            ``None`` to use the default hub directory.
         :param force_download: Whether to download the model from Datature Hub
             even if a copy already exists in the model cache folder.
         :param progress: Whether to display progress information as the model
@@ -318,7 +318,10 @@ class HubModel:
         )
 
     def load_label_map(self) -> Any:
-        """Load the label map for the Tensorflow model using the model key."""
+        """Load the label map for the Tensorflow model using the model key.
+
+        :return: dictionary containing label maps
+        """
         model_folder = self.model_dir
         if not os.path.exists(model_folder):
             raise FileNotFoundError(
@@ -336,6 +339,7 @@ class HubModel:
         """Load Image with image settings retrieved from model.
 
         :param path: The path of the image
+        :return: TF tensor
         """
         if self.height_width_cache is not None:
             return load_image(
@@ -357,25 +361,11 @@ class HubModel:
                 Try re-downloading the model by \
                 calling load_tf_model with force_download parameter = True."
             )
-        with open(pipeline_path, "r") as opened_file:
-            line_list = opened_file.readlines()
-            if "ssd" in line_list[1]:
-                nn_type = NNType.SSD
-            elif "faster_rcnn" in line_list[1]:
-                nn_type = NNType.FRCNN
-            nn_params = get_nn_params(nn_type)
-            for index, contents in enumerate(line_list):
-                if nn_params[0] in contents:
-                    model_height = int(
-                        line_list[index + 1]
-                        .strip()
-                        .replace((nn_params[1] + ": "), "")
-                    )
-                    model_width = int(
-                        line_list[index + 2]
-                        .strip()
-                        .replace((nn_params[2] + ": "), "")
-                    )
-                    break
+        (
+            model_height,
+            model_width,
+        ) = get_height_width.get_height_width_from_pipeline_config(
+            pipeline_path
+        )
         self.height_width_cache = (model_height, model_width)
         return load_image(path, model_height, model_width)
