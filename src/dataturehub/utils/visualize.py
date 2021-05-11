@@ -17,7 +17,8 @@ def visualize_bbox(
     Prints the bounding boxes indicating the detection,
     along with their confidence scores on the image.
     :param image_directory: The path of the image to perform visualizations on
-    :param detections_output: The detections that are being returned by the model
+    :param detections_output: The detections that are being returned by the
+        model
     :param category_index: The category index list
     :param threshold: The threshold confidence level required to be visualized
     """
@@ -28,15 +29,15 @@ def visualize_bbox(
     }
     detections["num_detections"] = num_detections
 
-    ## Filter out predictions below threshold
+    # Filter out predictions below threshold
     indexes = np.where(detections["detection_scores"] > float(threshold))
 
-    ## Extract predictions
+    # Extract predictions
     bboxes = detections["detection_boxes"][indexes]
     classes = detections["detection_classes"][indexes].astype(np.int64)
     scores = detections["detection_scores"][indexes]
 
-    ## Draw Predictions
+    # Draw Predictions
     image_origi = np.array(Image.open(image_directory).convert("RGB"))
     origi_shape = image_origi.shape
 
@@ -44,7 +45,7 @@ def visualize_bbox(
         for idx, each_bbox in enumerate(bboxes):
             color = color_switch(classes[idx] - 1)
 
-            ## Draw bounding box
+            # Draw bounding box
             image_origi = cv2.rectangle(
                 image_origi,
                 (
@@ -59,7 +60,7 @@ def visualize_bbox(
                 2,
             )
 
-            ## Draw label background
+            # Draw label background
             image_origi = cv2.rectangle(
                 image_origi,
                 (
@@ -74,7 +75,7 @@ def visualize_bbox(
                 -1,
             )
 
-            ## Insert label class & score
+            # Insert label class & score
             image_origi = cv2.putText(
                 image_origi,
                 "Class: {}, Score: {}".format(

@@ -1,4 +1,15 @@
+"""This module contains the utility function to obtain the.
+
+height and width form the pipeline config filepath
+"""
+
+
 def get_height_width_from_pipeline_config(pipeline_config_file):
+    """Get height and width from the pipeline config file path.
+
+    :param: pipeline_config_file: pipeline config file path
+    :return: tuple of (model_height, model_width)
+    """
     with open(pipeline_config_file, "r") as opened_file:
         line_list = opened_file.readlines()
         if "fixed_shape_resizer" in line_list[4]:

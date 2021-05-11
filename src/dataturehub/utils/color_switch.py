@@ -1,8 +1,8 @@
-"""This module contains the utility function color_switch"""
+"""This module contains the utility function color_switch."""
 
 
 def color_switch(number):
-    """Chooses a color depending on the given number.
+    """Choose a color depending on the given number.
 
     :param number: The number as an integer
     :return: The 3-tuple representing RGB channel

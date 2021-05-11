@@ -17,7 +17,8 @@ import tensorflow as tf
 from .utils import get_height_width
 
 _config = {
-    "hub_endpoint": "https://asia-northeast1-datature-alchemy.cloudfunctions.net/invoke-hub-staging"
+    "hub_endpoint": "https://asia-northeast1-datature-alchemy."
+    "cloudfunctions.net/invoke-hub-staging"
 }
 
 
@@ -101,31 +102,11 @@ def load_image(
 
 
 class ModelType(enum.Enum):
+
     """A type of machine learning model."""
 
     TF = "TF"
     """ProtoBuf model usable with TensorFlow"""
-
-
-class NNType(enum.Enum):
-    """A type of neural network used for the machine learning model."""
-
-    SSD = 1
-    """Neural network umbrella supporting MobileNet, EfficientDet."""
-    FRCNN = 2
-    """Neural network umbrella supporting FasterRCNN."""
-    CNET = 3
-    """Neural network umbrella supporting CenterNet"""
-
-
-def get_nn_params(nn_type):
-    if nn_type is NNType.SSD:
-        return ("fixed_shape_resizer", "height", "width")
-    if nn_type is NNType.FRCNN:
-        return ("keep_aspect_ratio_resizer", "min_dimension", "max_dimension")
-    if nn_type is NNType.CNET:
-        return ("TO BE ADDED", "TO BE ADDED", "TO BE ADDED")
-    raise ValueError("Invalid nn_type parameter.")
 
 
 _ModelURLWithHash = NamedTuple(
@@ -135,7 +116,8 @@ _ModelURLWithHash = NamedTuple(
 
 
 class HubModel:
-    """HubModel class"""
+
+    """HubModel class."""
 
     def _get_model_url_and_hash(
         self, model_key: str, project_secret: Optional[str]
@@ -160,7 +142,8 @@ class HubModel:
             and project_secret is not None
         ):
             sys.stderr.write(
-                "WARNING: Project secret unnecessarily supplied when downloading"
+                "WARNING: Project secret unnecessarily supplied when \
+                    downloading"
                 f"public model {model_key}."
             )
             sys.stderr.flush()
@@ -175,7 +158,7 @@ class HubModel:
         project_secret: Optional[str] = None,
         hub_dir: Optional[str] = None,
     ):
-        """Initialize the ModelHub object
+        """Initialize the ModelHub object.
 
         :param model_key: The model key obtained from datature
         :param project_secret: The project secret obtained from datature
@@ -193,7 +176,7 @@ class HubModel:
         )
 
     def get_default_model_dir(self):
-        """Gets the default hub directory"""
+        """Get the default hub directory."""
         return self.model_dir
 
     def _save_and_verify_model(
