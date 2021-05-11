@@ -58,7 +58,7 @@ def _get_sha256_hash_of_file(filepath: str, progress: bool) -> str:
     return hash_f.hexdigest()
 
 
-def load_label_map_from_file(
+def _load_label_map_from_file(
     label_map_path: str,
 ) -> Any:
     """Load the label map for the Tensorflow model.
@@ -81,7 +81,7 @@ def load_label_map_from_file(
     return label_map
 
 
-def load_image(
+def _load_image(
     path: str,
     height: int,
     width: int,
@@ -104,7 +104,7 @@ def load_image(
 def get_default_hub_dir():
     """Get the default hub directory.
     which is ~/.dataturehub on MacOS and Linux
-    and C:\Users\XXXX\.dataturehub on Windows.
+    and C:\\Users\\XXXX\\.dataturehub on Windows.
     """
     return os.path.join(Path.home(), ".dataturehub")
 
@@ -175,9 +175,9 @@ class HubModel:
         directory will be used
         """
         self.model_key = model_key
-        self.height_width_cache = None
+        self._height_width_cache = None
         self.project_secret = project_secret
-        self.model_url_and_hash = self._get_model_url_and_hash(
+        self._model_url_and_hash = self._get_model_url_and_hash(
             model_key, project_secret
         )
         self.model_dir = (
@@ -194,7 +194,7 @@ class HubModel:
             sys.stderr.write("Downloading model from Datature Hub...\n")
 
         with open(destination_path, "wb") as model_file:
-            response = requests.get(self.model_url_and_hash.url, stream=True)
+            response = requests.get(self._model_url_and_hash.url, stream=True)
 
             response.raise_for_status()
 
@@ -233,11 +233,11 @@ class HubModel:
 
         file_checksum = _get_sha256_hash_of_file(destination_path, progress)
 
-        if file_checksum != self.model_url_and_hash.checksum:
+        if file_checksum != self._model_url_and_hash.checksum:
             raise RuntimeError(
                 "Checksum of downloaded file "
                 f"({file_checksum}) does not match the expected "
-                f" value ({self.model_url_and_hash.checksum})"
+                f" value ({self._model_url_and_hash.checksum})"
             )
 
     def download_model(
@@ -320,7 +320,7 @@ class HubModel:
                 + " does not exist."
             )
         label_map_path = os.path.join(model_folder, "label_map.pbtxt")
-        return load_label_map_from_file(label_map_path=label_map_path)
+        return _load_label_map_from_file(label_map_path=label_map_path)
 
     def load_image_with_model_dimensions(
         self,
@@ -331,9 +331,9 @@ class HubModel:
         :param path: The path of the image
         :return: TF tensor
         """
-        if self.height_width_cache is not None:
-            return load_image(
-                path, self.height_width_cache[0], self.height_width_cache[1]
+        if self._height_width_cache is not None:
+            return _load_image(
+                path, self._height_width_cache[0], self._height_width_cache[1]
             )
 
         model_folder = self.model_dir
@@ -357,5 +357,5 @@ class HubModel:
         ) = get_height_width.get_height_width_from_pipeline_config(
             pipeline_path
         )
-        self.height_width_cache = (model_height, model_width)
-        return load_image(path, model_height, model_width)
+        self._height_width_cache = (model_height, model_width)
+        return _load_image(path, model_height, model_width)
