@@ -102,10 +102,11 @@ def _load_image(
 
 
 def get_default_hub_dir():
-    """Get the default hub directory.
+    r"""Get the default hub directory.
     which is ~/.dataturehub on MacOS and Linux
-    and C:\\Users\\XXXX\\.dataturehub on Windows.
+    and C:\Users\XXXX\.dataturehub on Windows.
     """
+
     return os.path.join(Path.home(), ".dataturehub")
 
 

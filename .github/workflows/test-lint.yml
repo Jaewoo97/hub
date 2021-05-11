@@ -43,6 +43,6 @@ jobs:
         env:
           HUB_CUSTOM_ENDPOINT: ${{ secrets.HUB_CUSTOM_ENDPOINT }}
         run: |
-          python -m pytest --tb=no -rN
+          python -m pytest
 
 
