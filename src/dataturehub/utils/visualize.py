@@ -45,7 +45,7 @@ def visualize_bbox(
             color = color_switch(classes[idx] - 1)
 
             ## Draw bounding box
-            cv2.rectangle(
+            image_origi = cv2.rectangle(
                 image_origi,
                 (
                     int(each_bbox[1] * origi_shape[1]),
@@ -60,7 +60,7 @@ def visualize_bbox(
             )
 
             ## Draw label background
-            cv2.rectangle(
+            image_origi = cv2.rectangle(
                 image_origi,
                 (
                     int(each_bbox[1] * origi_shape[1]),
@@ -75,7 +75,7 @@ def visualize_bbox(
             )
 
             ## Insert label class & score
-            cv2.putText(
+            image_origi = cv2.putText(
                 image_origi,
                 "Class: {}, Score: {}".format(
                     str(category_index[classes[idx]]["name"]),
