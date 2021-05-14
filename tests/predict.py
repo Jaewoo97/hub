@@ -11,8 +11,8 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 
 def load_image_into_numpy_array(
-    path: str, height: int, width: int
-) -> Tuple[np.ndarray, Tuple[int, int]]:
+        path: str, height: int,
+        width: int) -> Tuple[np.ndarray, Tuple[int, int]]:
     """Load and resize an image from a file into a NumPy array.
 
     Puts image into numpy array to feed into tensorflow graph.
@@ -69,9 +69,8 @@ def run_prediction(
         indexes = np.where(detections["detection_scores"] > threshold)
 
         bboxes = detections["detection_boxes"][indexes].tolist()
-        classes = (
-            detections["detection_classes"][indexes].astype(np.int64).tolist()
-        )
+        classes = (detections["detection_classes"][indexes].astype(
+            np.int64).tolist())
         scores = detections["detection_scores"][indexes].tolist()
 
         return {"bboxes": bboxes, "classes": classes, "scores": scores}
@@ -96,15 +95,9 @@ def predictions_equal(actual, expected) -> bool:
         classes_expected = np.array(expected_one["classes"])
         scores_expected = np.array(expected_one["scores"])
 
-        return (
-            np.allclose(bboxes_actual, bboxes_expected, 1e-01)
-            and np.allclose(classes_actual, classes_expected, 1e-01)
-            and np.allclose(scores_actual, scores_expected, 1e-01)
-        )
+        return (np.allclose(bboxes_actual, bboxes_expected)
+                and np.allclose(classes_actual, classes_expected)
+                and np.allclose(scores_actual, scores_expected))
 
-    return all(
-        (
-            one_prediction_equal(actual[i], expected_one)
-            for i, expected_one in enumerate(expected)
-        )
-    )
+    return all((one_prediction_equal(actual[i], expected_one)
+                for i, expected_one in enumerate(expected)))
