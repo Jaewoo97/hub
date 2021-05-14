@@ -111,7 +111,6 @@ def _load_tf_model_from_dir(
         even if a copy already exists in the model cache folder.
     :return: The loaded TensorFlow model
     """
-
     return tf.saved_model.load(os.path.join(model_dir), **kwargs)
 
 
