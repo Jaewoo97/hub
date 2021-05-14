@@ -23,8 +23,11 @@ def melanoma_model():
     image_size = (1024, 1024)
     threshold = 0.7
 
+    predictions_filename = ("predictions_windows.json"
+                            if os.name == "nt" else "predictions.json")
+
     with open(os.path.join(melanoma_directory,
-                           "predictions.json")) as predictions_file:
+                           predictions_filename)) as predictions_file:
         predictions = json.load(predictions_file)
 
     return (model_key, project_secret, images, image_size, threshold,
