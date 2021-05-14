@@ -101,6 +101,20 @@ def _load_image(
     return tf.convert_to_tensor(np.array(image))[tf.newaxis, ...]
 
 
+def _load_tf_model_from_dir(
+    model_dir,
+    **kwargs,
+) -> Any:
+    """Load a TensorFlow model from user-defined directory.
+
+    :param model_dir: Whether to download the model from Datature Hub
+        even if a copy already exists in the model cache folder.
+    :return: The loaded TensorFlow model
+    """
+
+    return tf.saved_model.load(os.path.join(model_dir), **kwargs)
+
+
 def get_default_hub_dir():
     r"""Get the default hub directory.
 
@@ -323,20 +337,11 @@ class HubModel:
         label_map_path = os.path.join(model_folder, "label_map.pbtxt")
         return _load_label_map_from_file(label_map_path=label_map_path)
 
-    def load_image_with_model_dimensions(
-        self,
-        path: str,
-    ) -> Any:
-        """Load Image with image settings retrieved from model.
+    def _get_pipeline_config_dir(self):
+        """Get the pipeline config directory.
 
-        :param path: The path of the image
-        :return: TF tensor
+        :return: string representing the pipeline config diectory.
         """
-        if self._height_width_cache is not None:
-            return _load_image(
-                path, self._height_width_cache[0], self._height_width_cache[1]
-            )
-
         model_folder = self.model_dir
         if not os.path.exists(model_folder):
             raise FileNotFoundError(
@@ -352,6 +357,23 @@ class HubModel:
                 Try re-downloading the model by \
                 calling load_tf_model with force_download parameter = True."
             )
+        return pipeline_path
+
+    def load_image_with_model_dimensions(
+        self,
+        path: str,
+    ) -> Any:
+        """Load Image with image settings retrieved from model.
+
+        :param path: The path of the image
+        :return: TF tensor
+        """
+        if self._height_width_cache is not None:
+            return _load_image(
+                path, self._height_width_cache[0], self._height_width_cache[1]
+            )
+
+        pipeline_path = self._get_pipeline_config_dir()
         (
             model_height,
             model_width,
