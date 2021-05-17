@@ -15,6 +15,9 @@ def get_height_width_from_pipeline_config(pipeline_config_file):
         if "fixed_shape_resizer" in line_list[4]:
             model_height = int(line_list[5].strip().replace("height: ", ""))
             model_width = int(line_list[6].strip().replace("width: ", ""))
+        elif "fixed_shape_resizer" in line_list[5]:
+            model_height = int(line_list[6].strip().replace("height: ", ""))
+            model_width = int(line_list[7].strip().replace("width: ", ""))
         elif "keep_aspect_ratio_resizer" in line_list[4]:
             model_height = int(
                 line_list[6].strip().replace("max_dimension: ", "")

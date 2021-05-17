@@ -17,8 +17,7 @@ import tensorflow as tf
 from .utils import get_height_width
 
 _config = {
-    "hub_endpoint": "https://asia-northeast1-datature-alchemy."
-    "cloudfunctions.net/invoke-hub-staging"
+    "hub_endpoint": "hub.api.datature.io",
 }
 
 
@@ -81,7 +80,7 @@ def _load_label_map_from_file(
     return label_map
 
 
-def _load_image(
+def load_image(
     path: str,
     height: int,
     width: int,
@@ -141,13 +140,11 @@ class HubModel:
 
     """HubModel class."""
 
-    def _get_model_url_and_hash(
-        self, model_key: str, project_secret: Optional[str]
-    ) -> _ModelURLWithHash:
+    def _get_model_url_and_hash(self) -> _ModelURLWithHash:
         """Get the URL and SHA256 hash of a model file."""
-        api_params = {"modelKey": model_key}
+        api_params = {"modelKey": self.model_key}
 
-        if project_secret is not None:
+        if self.project_secret is not None:
             api_params["projectSecret"] = self.project_secret
 
         response = requests.post(_config["hub_endpoint"], json=api_params)
@@ -161,12 +158,12 @@ class HubModel:
 
         if (
             not response_json["projectSecretNeeded"]
-            and project_secret is not None
+            and self.project_secret is not None
         ):
             sys.stderr.write(
                 "WARNING: Project secret unnecessarily supplied when \
                     downloading"
-                f"public model {model_key}."
+                f"public model {self.model_key}."
             )
             sys.stderr.flush()
 
@@ -191,9 +188,7 @@ class HubModel:
         self.model_key = model_key
         self._height_width_cache = None
         self.project_secret = project_secret
-        self._model_url_and_hash = self._get_model_url_and_hash(
-            model_key, project_secret
-        )
+        self._model_url_and_hash = self._get_model_url_and_hash()
         self.model_dir = (
             os.path.join(get_default_hub_dir(), model_key)
             if hub_dir is None
@@ -261,8 +256,6 @@ class HubModel:
     ) -> str:
         """Download a model, placing it in the ``destinaton`` directory.
 
-        :param destination: The path to the directory where the model will be
-            saved, or ``None`` to use the default hub directory.
         :param model_type: The type of the model that should be downloaded
         :param progress: Whether to display progress information as the model
             downloads.
@@ -327,16 +320,10 @@ class HubModel:
         :return: dictionary containing label maps
         """
         model_folder = self.model_dir
-        if not os.path.exists(model_folder):
-            raise FileNotFoundError(
-                "The directory for model key "
-                + self.model_key
-                + " does not exist."
-            )
         label_map_path = os.path.join(model_folder, "label_map.pbtxt")
         return _load_label_map_from_file(label_map_path=label_map_path)
 
-    def _get_pipeline_config_dir(self):
+    def get_pipeline_config_dir(self):
         """Get the pipeline config directory.
 
         :return: string representing the pipeline config diectory.
@@ -368,16 +355,14 @@ class HubModel:
         :return: TF tensor
         """
         if self._height_width_cache is not None:
-            return _load_image(
-                path, self._height_width_cache[0], self._height_width_cache[1]
+            model_height, model_width = self._height_width_cache
+        else:
+            pipeline_path = self.get_pipeline_config_dir()
+            (
+                model_height,
+                model_width,
+            ) = get_height_width.get_height_width_from_pipeline_config(
+                pipeline_path
             )
-
-        pipeline_path = self._get_pipeline_config_dir()
-        (
-            model_height,
-            model_width,
-        ) = get_height_width.get_height_width_from_pipeline_config(
-            pipeline_path
-        )
-        self._height_width_cache = (model_height, model_width)
-        return _load_image(path, model_height, model_width)
+            self._height_width_cache = (model_height, model_width)
+        return load_image(path, model_height, model_width)
