@@ -24,6 +24,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: [3.7, 3.8]
+      fail-fast: false
     name: Test
     runs-on: ${{ matrix.os }}
     steps:
@@ -43,6 +44,13 @@ jobs:
         env:
           HUB_CUSTOM_ENDPOINT: ${{ secrets.HUB_CUSTOM_ENDPOINT }}
         run: |
-          python -m pytest --tb=no -rN
+          python -m pytest
+      - name: Upload Test Predictions
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test_predictions-${{matrix.os}}-python-${{matrix.python-version}}.json
+          path: predictions.json
+
 
 

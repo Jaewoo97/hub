@@ -32,8 +32,12 @@ def load_image_into_numpy_array(
     return np.array(image_resized), (image_shape[0], image_shape[1])
 
 
-def run_prediction(trained_model, images: List[str],
-                   image_size: Tuple[int, int], threshold: float) -> Any:
+def run_prediction(
+    trained_model,
+    images: List[str],
+    image_size: Tuple[int, int],
+    threshold: float,
+) -> Any:
     """Run a prediction on a set of images.
 
     :param trained_model: The TensorFlow model to use for prediction
@@ -65,8 +69,8 @@ def run_prediction(trained_model, images: List[str],
         indexes = np.where(detections["detection_scores"] > threshold)
 
         bboxes = detections["detection_boxes"][indexes].tolist()
-        classes = detections["detection_classes"][indexes].astype(
-            np.int64).tolist()
+        classes = (detections["detection_classes"][indexes].astype(
+            np.int64).tolist())
         scores = detections["detection_scores"][indexes].tolist()
 
         return {"bboxes": bboxes, "classes": classes, "scores": scores}
