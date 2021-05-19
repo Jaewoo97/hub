@@ -17,7 +17,7 @@ import tensorflow as tf
 from .utils import get_height_width
 
 _config = {
-    "hub_endpoint": "hub.api.datature.io",
+    "hub_endpoint": "https://api.datature.io/hub",
 }
 
 
