@@ -361,7 +361,7 @@ class HubModel:
             (
                 model_height,
                 model_width,
-            ) = get_height_width.get_height_width_from_pipeline_config(
+            ) = get_height_width.pipeline_height_width(
                 pipeline_path
             )
             self._height_width_cache = (model_height, model_width)
