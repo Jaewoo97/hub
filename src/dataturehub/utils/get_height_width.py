@@ -4,7 +4,7 @@ height and width form the pipeline config filepath
 """
 
 
-def get_height_width_from_pipeline_config(pipeline_config_file):
+def dims_from_config(pipeline_config_file):
     """Get height and width from the pipeline config file path.
 
     :param: pipeline_config_file: pipeline config file path
