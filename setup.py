@@ -9,6 +9,7 @@ setuptools.setup(
     author="Ian Duncan",
     author_email="ian@datature.io",
     description="Loader for models trained on the Datature platform",
+    include_package_data=True,
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/datature/hub",
