@@ -4,7 +4,7 @@ with open("longdescription.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="dataturehub",
+    name="datature-hub",
     version="0.1.0",
     author="Ian Duncan",
     author_email="ian@datature.io",

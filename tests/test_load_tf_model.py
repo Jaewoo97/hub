@@ -2,7 +2,7 @@ import json
 
 import os
 
-import dataturehub.hub as hub
+import datature_hub.hub as hub
 
 import predict
 
