@@ -19,5 +19,38 @@ jobs:
       - name: Pylint, Flake8 and Pydocstyle
         run: |
           ./lint.sh
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.7, 3.8]
+      fail-fast: false
+    name: Test
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: Install Datature Hub
+        run: |
+          pip install .
+      - name: Run Tests
+        env:
+          HUB_CUSTOM_ENDPOINT: ${{ secrets.HUB_CUSTOM_ENDPOINT }}
+        run: |
+          python -m pytest
+      - name: Upload Test Predictions
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test_predictions-${{matrix.os}}-python-${{matrix.python-version}}.json
+          path: predictions.json
+
 
 
