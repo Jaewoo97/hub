@@ -5,7 +5,7 @@ with open("longdescription.md", "r") as fh:
 
 setuptools.setup(
     name="datature-hub",
-    version="0.1.0",
+    version="0.2.0",
     author="Ian Duncan",
     author_email="ian@datature.io",
     description="Loader for models trained on the Datature platform",
@@ -26,5 +26,7 @@ setuptools.setup(
         "tensorflow==2.3.0",
         "requests>=2.25.1",
         "opencv-python==4.5.1.48",
+        "numpy>=1.16.0,<1.19.0",
+        "Pillow~=8.2",
     ],
 )
