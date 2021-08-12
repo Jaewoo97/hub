@@ -5,7 +5,7 @@ with open("longdescription.md", "r") as fh:
 
 setuptools.setup(
     name="datature-hub",
-    version="0.2.0",
+    version="0.2.1",
     author="Ian Duncan",
     author_email="ian@datature.io",
     description="Loader for models trained on the Datature platform",
@@ -15,7 +15,7 @@ setuptools.setup(
     url="https://github.com/datature/hub",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
-    python_requires=">=3.7, <3.9",
+    python_requires=">=3.6, <3.9",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
