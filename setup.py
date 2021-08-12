@@ -5,7 +5,7 @@ with open("longdescription.md", "r") as fh:
 
 setuptools.setup(
     name="datature-hub",
-    version="0.2.0",
+    version="0.2.1",
     author="Ian Duncan",
     author_email="ian@datature.io",
     description="Loader for models trained on the Datature platform",
