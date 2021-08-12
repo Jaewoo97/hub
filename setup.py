@@ -15,7 +15,7 @@ setuptools.setup(
     url="https://github.com/datature/hub",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
-    python_requires=">=3.7, <3.9",
+    python_requires=">=3.6, <3.9",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
